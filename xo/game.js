@@ -1,31 +1,13 @@
-///////////////////////////////////////////////////////////////////
-// MODE and CONTROLLER
-//////////////////////
-
-const NOBODY = '';
-
-const WINNING_LINES = [
-    [0, 1, 2],
-    [3, 4, 5],
-    [6, 7, 8],
-    [0, 3, 6],
-    [1, 4, 7],
-    [2, 5, 8],
-    [0, 4, 8],
-    [2, 4, 6]
-]
+const EMPTY = '';
+const WINNING_LINES = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]];
 
 class Game {
     constructor() {
-        this.sessionId = new Date().getTime();
         this.views = [];
-        this.currentPlayer = 'X';
+        this.moves = [];
         this.winningLine = [];
-        this.board = [
-            '', '', '',
-            '', '', '',
-            '', '', '',
-        ];
+        this.currentPlayer = 'X';
+        this.board = new Array(9).fill(EMPTY);
     }
 
     attachView(view) {
@@ -34,12 +16,14 @@ class Game {
     }
 
     move(index) {
-        if (this.board[index] !== NOBODY) {
+        if (this.board[index] !== EMPTY || this.isFinished()) {
             return;
         }
 
         this.board[index] = this.currentPlayer;
-        this.switchPlayer();
+        this.currentPlayer = this.currentPlayer === 'X' ? '0' : 'X';
+        this.moves = this.moves.concat({ currentPlayer: this.currentPlayer, board: [...this.board]});
+
         this.checkWinner();
         this.notifyGameUpdated();
     }
@@ -47,41 +31,30 @@ class Game {
     reset() {
         this.winningLine = [];
         this.board = new Array(9).fill('');
+        this.moves = [];
         this.notifyGameUpdated();
     }
 
     getWinner() {
-        return this.winningLine.length > 0 ? this.board[this.winningLine[0]] : NOBODY;
+        return this.winningLine.length > 0 ? this.board[this.winningLine[0]] : EMPTY;
     }
 
-    // Private
+    isFinished() {
+        return this.getWinner() !== EMPTY;
+    }
 
     checkWinner() {
         WINNING_LINES.forEach(line => {
-            if (this.board[line[0]] !== NOBODY && 
-                this.board[line[0]] === this.board[line[1]] && 
+            if (this.board[line[0]] !== NOBODY &&
+                this.board[line[0]] === this.board[line[1]] &&
                 this.board[line[1]] === this.board[line[2]]) {
                 this.winningLine = line;
             }
         });
     }
 
-    switchPlayer() {
-        this.currentPlayer = this.currentPlayer === 'X' ? '0' : 'X';
-    }
-
     notifyGameUpdated() {
         this.views.forEach(view => view.onGameUpdated(this));
-    }
-}
-
-
-/////////////////////////////////////////////////////////
-// VIEW
-
-class ConsoleGameView {
-    onGameUpdated(game) {
-        console.log(game.board);
     }
 }
 
@@ -99,7 +72,7 @@ class HtmlGameView {
         for (let i = 0; i < this.buttons.length; i++) {
             this.buttons[i].addEventListener("click", () => {
                 this.game.move(i);
-            }); 
+            });
         }
     }
 
@@ -118,13 +91,13 @@ class HtmlGameView {
 
             if (game.winningLine.indexOf(i) >= 0) {
                 button.classList.add('winner');
-            } 
-         }
+            }
+        }
 
-         const winner = game.getWinner();
-         if (winner !== NOBODY) {
+        const winner = game.getWinner();
+        if (winner !== NOBODY) {
             alert(winner);
-         }
+        }
     }
 }
 
